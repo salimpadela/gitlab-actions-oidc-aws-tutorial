@@ -1,0 +1,36 @@
+name: vpc-ci-dev-destroy
+on: workflow_dispatch
+env:
+  TF_LOG: INFO
+  AWS_ACCOUNT_NUMBER: <<AWS_ACCOUNT_NUMBER>>
+permissions:
+  contents: read
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./iac/terraform/vpc
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{env.AWS_ACCOUNT_NUMBER}}:role/github-actions-role
+          role-session-name: Session-GitHubActions
+      - name: Setup Terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.6
+      - name: Terraform init
+        id: init
+        run: terraform init
+      - name: Terraform Destroy
+        run: terraform destroy -var-file=./dev/terraform.tfvars -auto-approve -input=false

@@ -1,0 +1,4 @@
+**/venv
+**/.terraform
+**/zzz.txt
+**/.DS_Store
